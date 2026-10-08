@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("package A0\nfunc A()A{\n//line \n} ")

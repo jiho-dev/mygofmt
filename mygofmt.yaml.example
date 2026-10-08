@@ -1,0 +1,46 @@
+version: 1
+
+base:
+  formatter: gofumpt
+  allow-syntax-changes: true
+  gofumpt:
+    lang-version: go1.25
+    module-path: ""
+    extra:
+      group-params: false
+      clothe-returns: false
+      balance-calls: false
+
+layout:
+  max-line-length: 120
+  tab-width: 4
+  min-call-arguments: 2
+  wrap:
+    function-parameters: false
+    function-results: false
+    type-parameters: false
+    call-arguments: false
+    composite-literals: true
+    nested-composite-literals: true
+    logical-conditions: true
+  defer-function-body: multiline
+
+whitespace:
+  preserve-existing: true
+  before-return: true
+  before-loop: true
+  after-loop: true
+  after-control-block: true
+  after-multiline-initialization: true
+  call-error-check: adjacent
+
+calls:
+  - methods: [Trace, Tracef, Debug, Debugf, Info, Infof, Warn, Warnf, Warning, Warningf, Error, Errorf, Fatal, Fatalf, Panic, Panicf, Print, Printf, Println, End, EndElapsed, EndError]
+    receivers: [log, logger, fl, s.logger]
+    blank-before: true
+    blank-after: true
+    include-block-boundaries: false
+
+files:
+  generated: gofmt-only
+  line-directives: gofmt-only
