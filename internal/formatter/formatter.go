@@ -66,10 +66,14 @@ func formatCore(source []byte, cfg config.Config) ([]byte, error) {
 			if err != nil {
 				return nil, fmt.Errorf("format original signatures: %w", err)
 			}
-			normalized = restoreBlockCommentGaps(original, normalized)
-			normalized, err = restoreSignatureLayout(original, normalized, cfg.Layout.Wrap)
-			if err != nil {
-				return nil, fmt.Errorf("restore signature layout: %w", err)
+			if cfg.Rules.PreserveBlockCommentGaps {
+				normalized = restoreBlockCommentGaps(original, normalized)
+			}
+			if cfg.Rules.PreserveSignatureLayout {
+				normalized, err = restoreSignatureLayout(original, normalized, cfg.Layout.Wrap)
+				if err != nil {
+					return nil, fmt.Errorf("restore signature layout: %w", err)
+				}
 			}
 		}
 		output, err := layoutstyle.Apply(normalized, cfg)

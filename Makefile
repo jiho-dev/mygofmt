@@ -1,6 +1,11 @@
+outfile="mygofmt"
+
 all:
-	go build -buildvcs=false -o mygofmt .
+	go build -buildvcs=false -o ${outfile} .
 
 install:
-	sudo /bin/cp ./mygofmt ~/bin/
+	sudo /bin/cp ./${outfile} ~/bin/
+
+clean:
+	rm -f ${outfile}
 

@@ -35,9 +35,11 @@ func Apply(source []byte, cfg config.Config) ([]byte, error) {
 		source = joinErrorChecks(source, fset, file)
 	}
 	var err error
-	source, err = compactSingleStatementBlocks(source)
-	if err != nil {
-		return nil, err
+	if cfg.Rules.CompactSingleStatementBlocks {
+		source, err = compactSingleStatementBlocks(source)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if cfg.Layout.Wrap.LogicalConditions {
 		source, err = balanceConditions(source, cfg)
@@ -349,6 +351,9 @@ func receiverName(expression ast.Expr) string {
 }
 
 func (s *sourceState) callSpacing(stmt ast.Stmt, before, boundary bool) bool {
+	if !s.options.Rules.SpaceConfiguredCalls {
+		return false
+	}
 	rule, ok := s.callRule(stmt)
 	if !ok || (boundary && !rule.IncludeBlockBoundaries) {
 		return false

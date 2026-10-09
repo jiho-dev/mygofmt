@@ -223,7 +223,7 @@ func TestGofumptExtras(t *testing.T) {
 func TestCLIConfigAndOverrides(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "settings.yaml")
-	if err := os.WriteFile(path, []byte("layout: {max-line-length: 200, wrap: {call-arguments: true}}\ncalls: []\n"), 0600); err != nil {
+	if err := os.WriteFile(path, []byte("layout: {max-line-length: 200}\nrules: {wrap-call-arguments: true}\ncalls: []\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	input := "package p\nfunc f() { allocate(request.TransactionIdentifier, request.PipelineIdentifier, request.ActorIdentifier); audit.Record(\"event\") }"
@@ -400,13 +400,12 @@ func TestExampleLoggingProfile(t *testing.T) {
 base:
   formatter: gofumpt
   allow-syntax-changes: true
-layout:
-  wrap:
-    function-parameters: false
-    function-results: false
-    type-parameters: false
-    call-arguments: false
-    nested-composite-literals: true
+rules:
+  wrap-function-parameters: false
+  wrap-function-results: false
+  wrap-type-parameters: false
+  wrap-call-arguments: false
+  wrap-nested-composite-literals: true
 calls:
   - methods: [Trace, Tracef, Debug, Debugf, Info, Infof, Warn, Warnf, Warning, Warningf, Error, Errorf, Fatal, Fatalf, Panic, Panicf, Print, Printf, Println, End, EndElapsed, EndError]
     receivers: [log, logger, fl, s.logger]

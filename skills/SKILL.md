@@ -1,6 +1,6 @@
 ---
 name: mygofmt
-description: mygofmt의 Go 소스 포매팅 사용법. 단일·복수 파일과 디렉터리 지정, 직접 수정, stdout 출력, 설정 파일 선택 및 포매팅 검사를 안내하거나 실행할 때 사용한다.
+description: mygofmt의 Go 소스 포매팅 사용법. 파일·디렉터리 지정, 직접 수정, stdout 출력, 규칙별 on/off 설정 및 포매팅 검사를 안내하거나 실행할 때 사용한다.
 ---
 
 # mygofmt 사용법
@@ -115,7 +115,16 @@ func example() {
 
 ## 설정 파일 지정
 
-기본 설정 파일은 `~/.config/mygofmt.yaml`이다. 파일이 없으면 내장 기본값을 사용한다. 이 파일에 gofumpt와 소스 배치 규칙을 함께 설정한다.
+기본 설정 파일은 `~/.config/mygofmt.yaml`이다. 파일이 없으면 내장 기본값을 사용한다. `base`에서 엔진을, `layout`에서 수치를, `rules`에서 기능별 on/off를 설정한다. `calls`는 특정 호출의 빈 줄 위치를, `files`는 생성 파일과 `//line` 파일의 처리 방식을 정한다. 전체 설정은 [예시 YAML](references/mygofmt.yaml.example), 규칙별 이름·기본값·예제는 [규칙 안내](references/rules.md)에 있다.
+
+설정 스키마 버전은 `1`이며, 생략한 규칙은 현재 기본값을 사용한다. 모든 규칙이 기본 `true`인 것은 아니다. 기존 YAML의 `layout.wrap`, `layout.defer-function-body`, `whitespace`, `base.gofumpt.extra` 키는 `rules`로 옮겨야 한다.
+
+```yaml
+version: 1
+rules:
+  wrap-call-arguments: true
+  blank-before-return: false
+```
 
 ```bash
 # 기본 설정 사용
@@ -132,12 +141,14 @@ mygofmt -m 100 -w file.go
 
 ## gofumpt 함께 사용
 
-설정 파일의 `base` 항목을 다음과 같이 지정한다.
+설정 파일의 `base` 항목을 다음과 같이 지정한다. 추가 gofumpt 규칙도 `rules` 아래에서 켜며, 기본값은 `false`다.
 
 ```yaml
 base:
   formatter: gofumpt
   allow-syntax-changes: true
+rules:
+  gofumpt-group-params: true
 ```
 
 이 내용을 `~/.config/mygofmt.yaml`에 반영하면 별도 `-config` 옵션 없이 적용된다.

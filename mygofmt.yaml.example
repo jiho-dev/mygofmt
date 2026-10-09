@@ -6,33 +6,35 @@ base:
   gofumpt:
     lang-version: go1.25
     module-path: ""
-    extra:
-      group-params: false
-      clothe-returns: false
-      balance-calls: false
 
 layout:
   max-line-length: 120
   tab-width: 4
   min-call-arguments: 2
-  wrap:
-    function-parameters: false
-    function-results: false
-    type-parameters: false
-    call-arguments: false
-    composite-literals: true
-    nested-composite-literals: true
-    logical-conditions: true
-  defer-function-body: multiline
 
-whitespace:
-  preserve-existing: true
-  before-return: true
-  before-loop: true
-  after-loop: true
-  after-control-block: true
-  after-multiline-initialization: true
-  call-error-check: adjacent
+rules:
+  wrap-function-parameters: false
+  wrap-function-results: false
+  wrap-type-parameters: false
+  wrap-call-arguments: false
+  wrap-composite-literals: true
+  wrap-nested-composite-literals: true
+  balance-logical-conditions: true
+  multiline-defer-body: true
+  preserve-existing-blank-lines: true
+  blank-before-return: true
+  blank-before-loop: true
+  blank-after-loop: true
+  blank-after-control-block: true
+  blank-after-multiline-initialization: true
+  join-call-error-checks: true
+  space-configured-calls: true
+  compact-single-statement-blocks: true
+  preserve-block-comment-gaps: true
+  preserve-signature-layout: true
+  gofumpt-group-params: false
+  gofumpt-clothe-returns: false
+  gofumpt-balance-calls: false
 
 calls:
   - methods: [Trace, Tracef, Debug, Debugf, Info, Infof, Warn, Warnf, Warning, Warningf, Error, Errorf, Fatal, Fatalf, Panic, Panicf, Print, Printf, Println, End, EndElapsed, EndError]

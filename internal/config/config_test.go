@@ -1,14 +1,17 @@
 package config
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 func TestParsePartialDefaults(t *testing.T) {
-	cfg, err := Parse([]byte("version: 1\nlayout:\n  max-line-length: 80\n  wrap:\n    call-arguments: false\nwhitespace:\n  before-return: false\ncalls: []\n"))
+	cfg, err := Parse([]byte("version: 1\nlayout:\n  max-line-length: 80\nrules:\n  wrap-call-arguments: false\n  blank-before-return: false\ncalls: []\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -20,20 +23,55 @@ func TestParsePartialDefaults(t *testing.T) {
 	}
 }
 
+func TestMarshalYAMLRoundTrip(t *testing.T) {
+	custom, err := Parse([]byte("base: {formatter: gofumpt, allow-syntax-changes: true}\nlayout: {max-line-length: 80}\nrules: {wrap-call-arguments: true, blank-before-return: false, space-configured-calls: false, gofumpt-group-params: true}\ncalls: []\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	custom.Layout.Wrap.FunctionParameters = true
+	for name, cfg := range map[string]Config{"default": Default(), "custom": custom} {
+		t.Run(name, func(t *testing.T) {
+			data, err := yaml.Marshal(cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, oldKey := range []string{"whitespace:", "wrap:", "defer-function-body:", "extra:"} {
+				if strings.Contains(string(data), oldKey) {
+					t.Fatalf("legacy key %q was marshaled:\n%s", oldKey, data)
+				}
+			}
+			decoded, err := Parse(data)
+			if err != nil {
+				t.Fatalf("marshaled config cannot be parsed: %v\n%s", err, data)
+			}
+			if decoded.Layout.Wrap.FunctionParameters != cfg.Layout.Wrap.FunctionParameters || decoded.Rules.SpaceConfiguredCalls != cfg.Rules.SpaceConfiguredCalls {
+				t.Fatalf("rule state changed during round trip: %+v", decoded.Rules)
+			}
+			again, err := yaml.Marshal(decoded)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(data, again) {
+				t.Fatalf("round trip changed YAML:\noriginal:\n%s\ndecoded:\n%s", data, again)
+			}
+		})
+	}
+}
+
 func TestRejectInvalidConfig(t *testing.T) {
 	cases := map[string]string{
 		"empty":              "",
 		"scalar":             "hello",
 		"null":               "version: null",
 		"unknown":            "layuot: {}",
-		"nested unknown":     "layout: {wrap: {calls: true}}",
+		"nested unknown":     "rules: {wrap-calls: true}",
 		"duplicate key":      "version: 1\nversion: 1",
 		"multiple documents": "version: 1\n---\nversion: 1",
 		"version":            "version: 2",
 		"length":             "layout: {max-line-length: 0}",
 		"tab":                "layout: {tab-width: 0}",
-		"defer":              "layout: {defer-function-body: inline}",
-		"error adjacency":    "whitespace: {call-error-check: inline}",
+		"legacy defer":       "layout: {defer-function-body: inline}",
+		"legacy whitespace":  "whitespace: {call-error-check: inline}",
 		"engine":             "base: {formatter: custom}",
 		"gofumpt consent":    "base: {formatter: gofumpt}",
 		"lang":               "base: {gofumpt: {lang-version: invalid}}",
@@ -43,7 +81,7 @@ func TestRejectInvalidConfig(t *testing.T) {
 		"bad method":         "calls: [{methods: ['log.Info']}]",
 		"keyword method":     "calls: [{methods: ['if']}]",
 		"duplicate method":   "calls: [{methods: [Info]}, {methods: [Info]}]",
-		"wrong bool":         "whitespace: {before-return: 1}",
+		"wrong bool":         "rules: {blank-before-return: 1}",
 	}
 	for name, input := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -56,7 +94,7 @@ func TestRejectInvalidConfig(t *testing.T) {
 
 func TestGofumptConfig(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	cfg, err := Parse([]byte("base:\n  formatter: gofumpt\n  allow-syntax-changes: true\n  gofumpt:\n    lang-version: go1.25\n    extra:\n      group-params: true\n"))
+	cfg, err := Parse([]byte("base:\n  formatter: gofumpt\n  allow-syntax-changes: true\n  gofumpt:\n    lang-version: go1.25\nrules:\n  gofumpt-group-params: true\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
