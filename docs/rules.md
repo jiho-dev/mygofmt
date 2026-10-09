@@ -19,7 +19,7 @@ rules:
 |---|---|---|
 | `wrap-function-parameters` | `false` | 길이가 넘는 함수 매개변수를 나눈다. `func f(first VeryLongType, second VeryLongType)` → `func f(⏎ first VeryLongType,⏎ second VeryLongType,⏎)` |
 | `wrap-function-results` | `false` | 길이가 넘는 함수 결과 목록을 나눈다. `func f() (FirstLongResult, SecondLongResult)` → `func f() (⏎ FirstLongResult,⏎ SecondLongResult,⏎)` |
-| `wrap-type-parameters` | `false` | 길이가 넘는 타입 매개변수 목록을 나눈다. `func f[First VeryLongConstraint, Second VeryLongConstraint]()` → `func f[⏎ First VeryLongConstraint,⏎ Second VeryLongConstraint,⏎]()` |
+| `wrap-type-parameters` | `false` | 길이가 넘는 함수·타입 선언(타입 별칭 포함)의 타입 매개변수 목록을 나눈다. `func f[First VeryLongConstraint, Second VeryLongConstraint]()` → `func f[⏎ First VeryLongConstraint,⏎ Second VeryLongConstraint,⏎]()` |
 | `wrap-call-arguments` | `false` | `layout.min-call-arguments` 이상인 긴 호출을 나눈다. `send(longFirstArgument, longSecondArgument)` → `send(⏎ longFirstArgument,⏎ longSecondArgument,⏎)` |
 | `wrap-composite-literals` | `true` | 긴 복합 리터럴의 항목을 나눈다. `Result{First: longFirstValue, Second: longSecondValue}` → `Result{⏎ First: longFirstValue,⏎ Second: longSecondValue,⏎}` |
 | `wrap-nested-composite-literals` | `true` | 여러 줄 키 기반 리터럴 안의 키 기반 자식 리터럴도 나눈다. `Outer{⏎ Inner: Inner{A: a, B: b},⏎}` → `Outer{⏎ Inner: Inner{⏎ A: a,⏎ B: b,⏎ },⏎}`. `wrap-composite-literals`가 켜져 있어야 한다. |
@@ -60,7 +60,7 @@ calls:
 | 이름 | 기본값 | 기능과 예제 (`입력` → `true`일 때) |
 |---|---|---|
 | `preserve-block-comment-gaps` | `true` | gofumpt가 줄인 블록 주석 양옆의 원래 빈 줄을 복원한다. `work()⏎⏎/* 설명 */⏎⏎finish()` → 두 빈 줄을 유지한다. |
-| `preserve-signature-layout` | `true` | 토큰이 같은 함수 시그니처에서 gofumpt가 바꾼 원래 줄 배치를 복원한다. `func f(⏎ a int, b int) {}` → 매개변수 줄 배치를 유지한다. 의도적으로 켠 `wrap-function-*`·`wrap-type-parameters` 규칙은 우선한다. |
+| `preserve-signature-layout` | `true` | 토큰이 같은 함수 시그니처와 타입 선언의 타입 매개변수에서 gofumpt가 바꾼 원래 줄 배치를 복원한다. `func f(⏎ a int, b int) {}` → 매개변수 줄 배치를 유지한다. 의도적으로 켠 `wrap-function-*`·`wrap-type-parameters` 규칙은 우선한다. |
 | `gofumpt-group-params` | `false` | 같은 타입의 연속 매개변수를 묶는다. `func f(a int, b int)` → `func f(a, b int)` |
 | `gofumpt-clothe-returns` | `false` | 이름 붙은 결과를 가진 함수의 빈 `return`에 결과 값을 적는다. `func f() (n int) { n = 1; return }` → `func f() (n int) { n = 1; return n }` |
 | `gofumpt-balance-calls` | `false` | 여러 줄 호출에서 여는 괄호가 줄 끝에 있으면 닫는 괄호를 별도 줄에 둔다. `send(⏎ value)` → `send(⏎ value⏎)` |

@@ -15,10 +15,13 @@ func TestParsePartialDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Layout.MaxLineLength != 80 || cfg.Layout.Wrap.CallArguments || cfg.Whitespace.BeforeReturn || len(cfg.Calls) != 0 {
+
+	if cfg.Layout.MaxLineLength != 80 || cfg.Rules.WrapCallArguments ||
+		cfg.Rules.BlankBeforeReturn || len(cfg.Calls) != 0 {
 		t.Fatalf("overrides lost: %+v", cfg)
 	}
-	if !cfg.Layout.Wrap.CompositeLiterals || cfg.Layout.TabWidth != 4 || cfg.Base.Formatter != "gofmt" {
+
+	if !cfg.Rules.WrapCompositeLiterals || cfg.Layout.TabWidth != 4 || cfg.Base.Formatter != "gofmt" {
 		t.Fatal("defaults lost")
 	}
 }
@@ -28,29 +31,36 @@ func TestMarshalYAMLRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	custom.Layout.Wrap.FunctionParameters = true
+
+	custom.Rules.WrapFunctionParameters = true
+
 	for name, cfg := range map[string]Config{"default": Default(), "custom": custom} {
 		t.Run(name, func(t *testing.T) {
 			data, err := yaml.Marshal(cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			for _, oldKey := range []string{"whitespace:", "wrap:", "defer-function-body:", "extra:"} {
 				if strings.Contains(string(data), oldKey) {
 					t.Fatalf("legacy key %q was marshaled:\n%s", oldKey, data)
 				}
 			}
+
 			decoded, err := Parse(data)
 			if err != nil {
 				t.Fatalf("marshaled config cannot be parsed: %v\n%s", err, data)
 			}
-			if decoded.Layout.Wrap.FunctionParameters != cfg.Layout.Wrap.FunctionParameters || decoded.Rules.SpaceConfiguredCalls != cfg.Rules.SpaceConfiguredCalls {
+
+			if decoded.Rules != cfg.Rules {
 				t.Fatalf("rule state changed during round trip: %+v", decoded.Rules)
 			}
+
 			again, err := yaml.Marshal(decoded)
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if !bytes.Equal(data, again) {
 				t.Fatalf("round trip changed YAML:\noriginal:\n%s\ndecoded:\n%s", data, again)
 			}
@@ -83,6 +93,7 @@ func TestRejectInvalidConfig(t *testing.T) {
 		"duplicate method":   "calls: [{methods: [Info]}, {methods: [Info]}]",
 		"wrong bool":         "rules: {blank-before-return: 1}",
 	}
+
 	for name, input := range cases {
 		t.Run(name, func(t *testing.T) {
 			if _, err := Parse([]byte(input)); err == nil {
@@ -98,12 +109,15 @@ func TestGofumptConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cfg.Base.Gofumpt.Extra.GroupParams || cfg.Base.Gofumpt.Extra.ClotheReturns {
+
+	if !cfg.Rules.GofumptGroupParams || cfg.Rules.GofumptClotheReturns {
 		t.Fatal("extra rule overrides lost")
 	}
+
 	if _, err := Load("does-not-exist.yaml"); err == nil || !strings.Contains(err.Error(), "read config") {
 		t.Fatal("missing config accepted")
 	}
+
 	if cfg, err := Load(""); err != nil || cfg.Version != 1 {
 		t.Fatal("default config failed")
 	}
@@ -118,34 +132,43 @@ func TestDefaultConfigLocation(t *testing.T) {
 	if err != nil || cfg.Layout.MaxLineLength != 120 {
 		t.Fatalf("missing default fallback: %+v %v", cfg, err)
 	}
+
 	path := filepath.Join(userDirectory, ".config", "mygofmt.yaml")
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := os.WriteFile(path, []byte("layout: {max-line-length: 80}"), 0600); err != nil {
 		t.Fatal(err)
 	}
+
 	cfg, err = Load("")
 	if err != nil || cfg.Layout.MaxLineLength != 80 {
 		t.Fatalf("default file not loaded: %+v %v", cfg, err)
 	}
+
 	explicit := filepath.Join(userDirectory, "explicit.yaml")
 	if err := os.WriteFile(explicit, []byte("layout: {max-line-length: 200}"), 0600); err != nil {
 		t.Fatal(err)
 	}
+
 	cfg, err = Load(explicit)
 	if err != nil || cfg.Layout.MaxLineLength != 200 {
 		t.Fatalf("explicit override: %+v %v", cfg, err)
 	}
+
 	if _, err := Load(filepath.Join(userDirectory, "missing.yaml")); err == nil {
 		t.Fatal("explicit missing file fell back")
 	}
+
 	if err := os.WriteFile(path, []byte("unknown: true"), 0600); err != nil {
 		t.Fatal(err)
 	}
+
 	if _, err := Load(""); err == nil {
 		t.Fatal("invalid default file silently ignored")
 	}
+
 	if _, err := Load(explicit); err != nil {
 		t.Fatalf("invalid default affected explicit path: %v", err)
 	}
@@ -160,11 +183,20 @@ func TestDefaultsAreIndependent(t *testing.T) {
 }
 
 func TestCallReceiverValidation(t *testing.T) {
-	for _, receivers := range []string{"['']", "['fl.']", "['fl..logger']", "['for']", "['_']", "['makeLogger()']", "['fl', 'fl']"} {
+	for _, receivers := range []string{
+		"['']",
+		"['fl.']",
+		"['fl..logger']",
+		"['for']",
+		"['_']",
+		"['makeLogger()']",
+		"['fl', 'fl']",
+	} {
 		if _, err := Parse([]byte("calls:\n  - methods: [Error]\n    receivers: " + receivers + "\n")); err == nil {
 			t.Errorf("accepted invalid receivers: %s", receivers)
 		}
 	}
+
 	cfg, err := Parse([]byte("calls:\n  - methods: [Error]\n    receivers: [fl, s.logger]\n"))
 	if err != nil || len(cfg.Calls[0].Receivers) != 2 {
 		t.Fatalf("valid receiver configuration: %v, %v", cfg, err)
@@ -175,12 +207,15 @@ func TestMinimumCallArgumentsConfig(t *testing.T) {
 	if _, err := Parse([]byte("layout:\n  min-call-arguments: 0\n")); err == nil {
 		t.Fatal("accepted zero minimum call arguments")
 	}
+
 	cfg, err := Parse([]byte("layout:\n  min-call-arguments: 3\n"))
 	if err != nil || cfg.Layout.MinCallArguments != 3 {
 		t.Fatalf("minimum call arguments: %v, %v", cfg, err)
 	}
+
 	cfg = Default()
-	if cfg.Layout.MinCallArguments != 2 || cfg.Layout.Wrap.FunctionParameters || cfg.Layout.Wrap.FunctionResults || cfg.Layout.Wrap.TypeParameters || cfg.Layout.Wrap.CallArguments {
+	if cfg.Layout.MinCallArguments != 2 || cfg.Rules.WrapFunctionParameters ||
+		cfg.Rules.WrapFunctionResults || cfg.Rules.WrapTypeParameters || cfg.Rules.WrapCallArguments {
 		t.Fatalf("unexpected signature or call defaults: %+v", cfg.Layout)
 	}
 }

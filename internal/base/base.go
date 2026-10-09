@@ -10,24 +10,32 @@ import (
 	fumpt "mvdan.cc/gofumpt/format"
 )
 
-func Format(source []byte, cfg config.Base) ([]byte, error) {
+func Format(source []byte, cfg config.Config) ([]byte, error) {
 	source, err := Gofmt(source)
 	if err != nil {
 		return nil, err
 	}
-	if cfg.Formatter == "gofmt" {
+
+	if cfg.Base.Formatter == "gofmt" {
 		return source, nil
 	}
-	if cfg.Formatter != "gofumpt" {
-		return nil, fmt.Errorf("unknown base formatter: %s", cfg.Formatter)
+
+	if cfg.Base.Formatter != "gofumpt" {
+		return nil, fmt.Errorf("unknown base formatter: %s", cfg.Base.Formatter)
 	}
-	if !cfg.AllowSyntaxChanges {
+
+	if !cfg.Base.AllowSyntaxChanges {
 		return nil, fmt.Errorf("gofumpt requires allow-syntax-changes")
 	}
+
 	return fumpt.Source(source, fumpt.Options{
-		LangVersion: cfg.Gofumpt.LangVersion,
-		ModulePath:  cfg.Gofumpt.ModulePath,
-		Extra:       fumpt.Extra{GroupParams: cfg.Gofumpt.Extra.GroupParams, ClotheReturns: cfg.Gofumpt.Extra.ClotheReturns, BalanceCalls: cfg.Gofumpt.Extra.BalanceCalls},
+		LangVersion: cfg.Base.Gofumpt.LangVersion,
+		ModulePath:  cfg.Base.Gofumpt.ModulePath,
+		Extra: fumpt.Extra{
+			GroupParams:   cfg.Rules.GofumptGroupParams,
+			ClotheReturns: cfg.Rules.GofumptClotheReturns,
+			BalanceCalls:  cfg.Rules.GofumptBalanceCalls,
+		},
 	})
 }
 
@@ -39,10 +47,13 @@ func Gofmt(source []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		if bytes.Equal(source, output) {
 			return output, nil
 		}
+
 		source = output
 	}
+
 	return nil, fmt.Errorf("gofmt did not converge after 8 rounds")
 }

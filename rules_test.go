@@ -15,16 +15,25 @@ func TestYAMLRuleSwitchesChangeFormatting(t *testing.T) {
 		markerWhenOn                      bool
 	}{
 		{
-			name: "wrap-function-parameters", source: "package p\nfunc f(first VeryLongType, second VeryLongType) {}\n",
-			otherConfig: "layout: {max-line-length: 40}\n", marker: "func f(\n", markerWhenOn: true,
+			name:         "wrap-function-parameters",
+			source:       "package p\nfunc f(first VeryLongType, second VeryLongType) {}\n",
+			otherConfig:  "layout: {max-line-length: 40}\n",
+			marker:       "func f(\n",
+			markerWhenOn: true,
 		},
 		{
-			name: "wrap-function-results", source: "package p\nfunc f() (FirstLongResult, SecondLongResult) { panic(0) }\n",
-			otherConfig: "layout: {max-line-length: 40}\n", marker: "func f() (\n", markerWhenOn: true,
+			name:         "wrap-function-results",
+			source:       "package p\nfunc f() (FirstLongResult, SecondLongResult) { panic(0) }\n",
+			otherConfig:  "layout: {max-line-length: 40}\n",
+			marker:       "func f() (\n",
+			markerWhenOn: true,
 		},
 		{
-			name: "wrap-type-parameters", source: "package p\nfunc f[First VeryLongConstraint, Second VeryLongConstraint]() {}\n",
-			otherConfig: "layout: {max-line-length: 40}\n", marker: "func f[\n", markerWhenOn: true,
+			name:         "wrap-type-parameters",
+			source:       "package p\nfunc f[First VeryLongConstraint, Second VeryLongConstraint]() {}\n",
+			otherConfig:  "layout: {max-line-length: 40}\n",
+			marker:       "func f[\n",
+			markerWhenOn: true,
 		},
 		{
 			name:         "wrap-call-arguments",
@@ -34,24 +43,36 @@ func TestYAMLRuleSwitchesChangeFormatting(t *testing.T) {
 			markerWhenOn: true,
 		},
 		{
-			name: "wrap-composite-literals", source: "package p\nfunc f() { _ = Result{First: longFirstValue, Second: longSecondValue} }\n",
-			otherConfig: "layout: {max-line-length: 45}\n", marker: "Result{\n", markerWhenOn: true,
+			name:         "wrap-composite-literals",
+			source:       "package p\nfunc f() { _ = Result{First: longFirstValue, Second: longSecondValue} }\n",
+			otherConfig:  "layout: {max-line-length: 45}\n",
+			marker:       "Result{\n",
+			markerWhenOn: true,
 		},
 		{
-			name: "wrap-nested-composite-literals", source: "package p\nvar _ = Outer{\nInner: Inner{First: a, Second: b},\n}\n",
-			marker: "Inner: Inner{\n", markerWhenOn: true,
+			name:         "wrap-nested-composite-literals",
+			source:       "package p\nvar _ = Outer{\nInner: Inner{First: a, Second: b},\n}\n",
+			marker:       "Inner: Inner{\n",
+			markerWhenOn: true,
 		},
 		{
-			name: "balance-logical-conditions", source: "package p\nfunc f() { if firstLongCondition && secondLongCondition && thirdLongCondition { run() } }\n",
-			otherConfig: "layout: {max-line-length: 45}\n", marker: "&&\n", markerWhenOn: true,
+			name:         "balance-logical-conditions",
+			source:       "package p\nfunc f() { if firstLongCondition && secondLongCondition && thirdLongCondition { run() } }\n",
+			otherConfig:  "layout: {max-line-length: 45}\n",
+			marker:       "&&\n",
+			markerWhenOn: true,
 		},
 		{
-			name: "multiline-defer-body", source: "package p\nfunc f() { defer func() { cleanup() }() }\n",
-			marker: "defer func() {\n", markerWhenOn: true,
+			name:         "multiline-defer-body",
+			source:       "package p\nfunc f() { defer func() { cleanup() }() }\n",
+			marker:       "defer func() {\n",
+			markerWhenOn: true,
 		},
 		{
-			name: "preserve-existing-blank-lines", source: "package p\nfunc f() {\nfirst()\n\nsecond()\n}\n",
-			marker: "first()\n\n\tsecond()", markerWhenOn: true,
+			name:         "preserve-existing-blank-lines",
+			source:       "package p\nfunc f() {\nfirst()\n\nsecond()\n}\n",
+			marker:       "first()\n\n\tsecond()",
+			markerWhenOn: true,
 		},
 		{
 			name:         "blank-before-return",
@@ -60,24 +81,34 @@ func TestYAMLRuleSwitchesChangeFormatting(t *testing.T) {
 			markerWhenOn: true,
 		},
 		{
-			name: "blank-before-loop", source: "package p\nfunc f() { prepare(); for ok { run() } }\n",
-			marker: "prepare()\n\n\tfor", markerWhenOn: true,
+			name:         "blank-before-loop",
+			source:       "package p\nfunc f() { prepare(); for ok { run() } }\n",
+			marker:       "prepare()\n\n\tfor",
+			markerWhenOn: true,
 		},
 		{
-			name: "blank-after-loop", source: "package p\nfunc f() { for ok { run() }; finish() }\n",
-			marker: "}\n\n\tfinish()", markerWhenOn: true,
+			name:         "blank-after-loop",
+			source:       "package p\nfunc f() { for ok { run() }; finish() }\n",
+			marker:       "}\n\n\tfinish()",
+			markerWhenOn: true,
 		},
 		{
-			name: "blank-after-control-block", source: "package p\nfunc f() { if ok { run() }; finish() }\n",
-			marker: "}\n\n\tfinish()", markerWhenOn: true,
+			name:         "blank-after-control-block",
+			source:       "package p\nfunc f() { if ok { run() }; finish() }\n",
+			marker:       "}\n\n\tfinish()",
+			markerWhenOn: true,
 		},
 		{
-			name: "blank-after-multiline-initialization", source: "package p\nfunc f() { r := Result{\nA: a,\n}; use(r) }\n",
-			marker: "}\n\n\tuse(r)", markerWhenOn: true,
+			name:         "blank-after-multiline-initialization",
+			source:       "package p\nfunc f() { r := Result{\nA: a,\n}; use(r) }\n",
+			marker:       "}\n\n\tuse(r)",
+			markerWhenOn: true,
 		},
 		{
-			name: "join-call-error-checks", source: "package p\nfunc f() {\n_, err := load()\n\nif err != nil { return }\n}\n",
-			marker: "load()\n\n\tif err", markerWhenOn: false,
+			name:         "join-call-error-checks",
+			source:       "package p\nfunc f() {\n_, err := load()\n\nif err != nil { return }\n}\n",
+			marker:       "load()\n\n\tif err",
+			markerWhenOn: false,
 		},
 		{
 			name:         "space-configured-calls",
@@ -92,12 +123,18 @@ func TestYAMLRuleSwitchesChangeFormatting(t *testing.T) {
 			markerWhenOn: false,
 		},
 		{
-			name: "preserve-block-comment-gaps", source: "package p\nfunc f() {\nx, err := start()\n\n/*\nnote\n*/\n\nif err != nil { return }\n_ = x\n}\n",
-			otherConfig: "base: {formatter: gofumpt, allow-syntax-changes: true}\n", marker: "start()\n\n\t/*", markerWhenOn: true,
+			name:         "preserve-block-comment-gaps",
+			source:       "package p\nfunc f() {\nx, err := start()\n\n/*\nnote\n*/\n\nif err != nil { return }\n_ = x\n}\n",
+			otherConfig:  "base: {formatter: gofumpt, allow-syntax-changes: true}\n",
+			marker:       "start()\n\n\t/*",
+			markerWhenOn: true,
 		},
 		{
-			name: "preserve-signature-layout", source: "package p\nfunc (worker *Worker) process(ctx Context, logger Logger,\n request Request, key, actor string) (result Result, err error) { return }\n",
-			otherConfig: "base: {formatter: gofumpt, allow-syntax-changes: true}\n", marker: "key, actor string)", markerWhenOn: true,
+			name:         "preserve-signature-layout",
+			source:       "package p\nfunc (worker *Worker) process(ctx Context, logger Logger,\n request Request, key, actor string) (result Result, err error) { return }\n",
+			otherConfig:  "base: {formatter: gofumpt, allow-syntax-changes: true}\n",
+			marker:       "key, actor string)",
+			markerWhenOn: true,
 		},
 		{
 			name:         "gofumpt-group-params",
@@ -107,14 +144,21 @@ func TestYAMLRuleSwitchesChangeFormatting(t *testing.T) {
 			markerWhenOn: true,
 		},
 		{
-			name: "gofumpt-clothe-returns", source: "package p\nfunc f() (n int) { n = 1; return }\n",
-			otherConfig: "base: {formatter: gofumpt, allow-syntax-changes: true}\n", marker: "return n", markerWhenOn: true,
+			name:         "gofumpt-clothe-returns",
+			source:       "package p\nfunc f() (n int) { n = 1; return }\n",
+			otherConfig:  "base: {formatter: gofumpt, allow-syntax-changes: true}\n",
+			marker:       "return n",
+			markerWhenOn: true,
 		},
 		{
-			name: "gofumpt-balance-calls", source: "package p\nfunc f() { send(\nvalue) }\n",
-			otherConfig: "base: {formatter: gofumpt, allow-syntax-changes: true}\n", marker: "value,\n\t)", markerWhenOn: true,
+			name:         "gofumpt-balance-calls",
+			source:       "package p\nfunc f() { send(\nvalue) }\n",
+			otherConfig:  "base: {formatter: gofumpt, allow-syntax-changes: true}\n",
+			marker:       "value,\n\t)",
+			markerWhenOn: true,
 		},
 	}
+
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, enabled := range []bool{false, true} {
@@ -122,10 +166,12 @@ func TestYAMLRuleSwitchesChangeFormatting(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+
 				got, err := Format([]byte(tc.source), cfg)
 				if err != nil {
 					t.Fatal(err)
 				}
+
 				if present := bytes.Contains(got, []byte(tc.marker)); present != (enabled == tc.markerWhenOn) {
 					t.Fatalf("enabled=%t marker %q present=%t:\n%s", enabled, tc.marker, present, got)
 				}
@@ -145,7 +191,26 @@ func TestYAMLSchemaRejectsOldRuleLocations(t *testing.T) {
 			t.Fatalf("old rule location %q was not directed to rules: %v", source, err)
 		}
 	}
-	if cfg, err := config.Parse([]byte("version: 1\nrules: {blank-before-return: false}\n")); err != nil || cfg.Version != 1 || cfg.Whitespace.BeforeReturn {
+
+	if cfg, err := config.Parse([]byte("version: 1\nrules: {blank-before-return: false}\n")); err != nil ||
+		cfg.Version != 1 || cfg.Rules.BlankBeforeReturn {
 		t.Fatalf("version 1 rules were not accepted: %+v, %v", cfg, err)
+	}
+}
+
+func TestProgrammaticRuleSwitch(t *testing.T) {
+	source := []byte("package p\nfunc f() int { work(); return 1 }\n")
+	cfg := config.Default()
+
+	for _, enabled := range []bool{false, true} {
+		cfg.Rules.BlankBeforeReturn = enabled
+		got, err := Format(source, cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if hasGap := bytes.Contains(got, []byte("work()\n\n\treturn")); hasGap != enabled {
+			t.Fatalf("enabled=%t: %s", enabled, got)
+		}
 	}
 }

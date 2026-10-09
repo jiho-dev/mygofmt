@@ -16,6 +16,7 @@ func compactSingleStatementBlocks(source []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	type gap struct{ start, end int }
 	var gaps []gap
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -23,7 +24,9 @@ func compactSingleStatementBlocks(source []byte) ([]byte, error) {
 		if !ok || len(block.List) != 1 {
 			return true
 		}
+
 		stmt := block.List[0]
+
 		for _, positions := range [][2]token.Pos{{block.Lbrace + 1, stmt.Pos()}, {stmt.End(), block.Rbrace}} {
 			start := fset.PositionFor(positions[0], false).Offset
 			end := fset.PositionFor(positions[1], false).Offset
@@ -32,19 +35,24 @@ func compactSingleStatementBlocks(source []byte) ([]byte, error) {
 				gaps = append(gaps, gap{start, end})
 			}
 		}
+
 		return true
 	})
 	if len(gaps) == 0 {
 		return source, nil
 	}
+
 	sort.Slice(gaps, func(i, j int) bool { return gaps[i].start < gaps[j].start })
 	var output bytes.Buffer
 	start := 0
+
 	for _, gap := range gaps {
 		output.Write(source[start:gap.start])
 		output.WriteByte('\n')
 		start = gap.end
 	}
+
 	output.Write(source[start:])
+
 	return output.Bytes(), nil
 }

@@ -18,73 +18,88 @@ func Format(source []byte, cfg config.Config) ([]byte, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
+
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, "", source, parser.ParseComments)
 	if err != nil {
 		return nil, err
 	}
+
 	plan, err := parseExceptions(source, fset, file)
 	if err != nil {
 		return nil, err
 	}
+
 	if plan.skipFile {
 		return bytes.Clone(source), nil
 	}
-	output, err := formatCore(plan.source, cfg)
+
+	output, err := formatCore(plan.source, cfg, filePolicy(file, cfg))
 	if err != nil {
 		return nil, err
 	}
+
 	return plan.restore(output)
 }
 
-func formatCore(source []byte, cfg config.Config) ([]byte, error) {
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, "", source, parser.ParseComments)
-	if err != nil {
-		return nil, err
-	}
+func filePolicy(file *ast.File, cfg config.Config) string {
 	policy := ""
 	if ast.IsGenerated(file) {
 		policy = cfg.Files.Generated
 	}
+
 	if hasLineDirective(file) && policy != "skip" {
 		policy = cfg.Files.LineDirectives
 	}
+
+	return policy
+}
+
+func formatCore(source []byte, cfg config.Config, policy string) ([]byte, error) {
 	if policy == "skip" {
 		return bytes.Clone(source), nil
 	}
+
 	if policy == "gofmt-only" {
 		return base.Gofmt(source)
 	}
+
 	for round := 0; round < 8; round++ {
-		normalized, err := base.Format(source, cfg.Base)
+		normalized, err := base.Format(source, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("base formatter: %w", err)
 		}
+
 		if cfg.Base.Formatter == "gofumpt" {
 			original, err := base.Gofmt(source)
 			if err != nil {
 				return nil, fmt.Errorf("format original signatures: %w", err)
 			}
+
 			if cfg.Rules.PreserveBlockCommentGaps {
 				normalized = restoreBlockCommentGaps(original, normalized)
 			}
+
 			if cfg.Rules.PreserveSignatureLayout {
-				normalized, err = restoreSignatureLayout(original, normalized, cfg.Layout.Wrap)
+				normalized, err = restoreSignatureLayout(original, normalized, cfg.Rules)
 				if err != nil {
 					return nil, fmt.Errorf("restore signature layout: %w", err)
 				}
 			}
 		}
+
 		output, err := layoutstyle.Apply(normalized, cfg)
 		if err != nil {
 			return nil, err
 		}
+
 		if bytes.Equal(source, output) {
 			return output, nil
 		}
+
 		source = output
 	}
+
 	return nil, fmt.Errorf("combined formatting did not converge after 8 rounds")
 }
 
@@ -96,5 +111,6 @@ func hasLineDirective(file *ast.File) bool {
 			}
 		}
 	}
+
 	return false
 }
