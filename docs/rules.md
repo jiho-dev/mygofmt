@@ -44,6 +44,9 @@ rules:
 
 `calls`의 `blank-before`, `blank-after`, `include-block-boundaries`는 **각 호출 규칙의 적용 위치**를 정한다. `space-configured-calls: false`면 호출 규칙의 빈 줄 추가 전체가 꺼진다. 메서드·수신자 목록은 호출을 찾는 조건이며, `calls: []`도 호출 빈 줄을 끈다.
 
+`space-configured-calls`가 켜져 있으면 대상 호출 바로 위의 독립된 주석 그룹과 호출 사이 빈 줄을 제거한다. `preserve-existing-blank-lines: true`여도 이 간격은 정리하며, 호출 앞 빈 줄이 필요하면 주석 앞에 둔다. 이전 코드 줄 끝의 주석과 더 앞쪽 주석 문단의 간격은 유지한다.
+
+
 ```yaml
 calls:
   - methods: [Info, Infof]

@@ -19,6 +19,14 @@ import (
 
 // Apply changes source layout without changing its AST.
 func Apply(source []byte, cfg config.Config) ([]byte, error) {
+	if cfg.Rules.SpaceConfiguredCalls {
+		var err error
+		source, err = joinCallComments(source, cfg)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if !cfg.Rules.PreserveExistingBlankLines {
 		var err error
 		source, err = compactWhitespace(source)
