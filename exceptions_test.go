@@ -23,7 +23,7 @@ func f() {
 }
 `)
 
-	for _, cfg := range []config.Config{config.Default(), loadExampleConfig(t)} {
+	for _, cfg := range []config.Config{config.Default(), gofumptTestConfig(t)} {
 		got, err := Format(input, cfg)
 		if err != nil {
 			t.Fatal(err)
@@ -51,7 +51,7 @@ func f() {
 
 func TestIgnoreFileReturnsOriginal(t *testing.T) {
 	input := []byte("// mygofmt:ignore-file\npackage p\nfunc f(){ x:=1;_ = x }\n")
-	got, err := Format(input, loadExampleConfig(t))
+	got, err := Format(input, gofumptTestConfig(t))
 	if err != nil || !bytes.Equal(got, input) {
 		t.Fatalf("file exception changed source: %v\n%s", err, got)
 	}
@@ -59,7 +59,7 @@ func TestIgnoreFileReturnsOriginal(t *testing.T) {
 
 func TestMultipleIgnoredLines(t *testing.T) {
 	input := []byte("package p\n\nfunc f() {\n\t// mygofmt:ignore\n\tx:=1\n\t// mygofmt:ignore\n\ty:=2\n\t_ = x\n\t_ = y\n}\n")
-	got, err := Format(input, loadExampleConfig(t))
+	got, err := Format(input, gofumptTestConfig(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestMultipleIgnoredLines(t *testing.T) {
 		t.Fatalf("one of the ignored lines changed:\n%s", got)
 	}
 
-	again, err := Format(got, loadExampleConfig(t))
+	again, err := Format(got, gofumptTestConfig(t))
 	if err != nil || !bytes.Equal(got, again) {
 		t.Fatalf("multiple ignored lines are unstable: %v\n%s\nnext:\n%s", err, got, again)
 	}
@@ -128,12 +128,11 @@ func TestCLIIgnoredLineCheck(t *testing.T) {
 	}
 }
 
-func loadExampleConfig(t *testing.T) config.Config {
+func gofumptTestConfig(t *testing.T) config.Config {
 	t.Helper()
-	cfg, err := config.Load("mygofmt.yaml.example")
-	if err != nil {
-		t.Fatal(err)
-	}
+	cfg := config.Default()
+	cfg.Base.Formatter = "gofumpt"
+	cfg.Base.AllowSyntaxChanges = true
 
 	return cfg
 }
@@ -147,7 +146,7 @@ func TestIgnoreMultilineTokens(t *testing.T) {
 		"no final newline": "var s=`first\nsecond`",
 	} {
 		t.Run(name, func(t *testing.T) {
-			for _, cfg := range []config.Config{config.Default(), loadExampleConfig(t)} {
+			for _, cfg := range []config.Config{config.Default(), gofumptTestConfig(t)} {
 				input := []byte("package p\nvar ordinary=1\n// mygofmt:ignore\n" + protected)
 				got, err := Format(input, cfg)
 				if err != nil {
@@ -194,7 +193,7 @@ func TestProtectedCompilerDirectives(t *testing.T) {
 
 			input := []byte("package p\n" + prefix + protected + suffix + declaration)
 
-			for _, cfg := range []config.Config{config.Default(), loadExampleConfig(t)} {
+			for _, cfg := range []config.Config{config.Default(), gofumptTestConfig(t)} {
 				got, err := Format(input, cfg)
 				if err != nil {
 					t.Fatal(err)

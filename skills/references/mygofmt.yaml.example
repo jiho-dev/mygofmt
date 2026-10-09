@@ -1,8 +1,8 @@
 version: 1
 
 base:
-  formatter: gofumpt
-  allow-syntax-changes: true
+  formatter: gofmt
+  allow-syntax-changes: false
   gofumpt:
     lang-version: go1.25
     module-path: ""
@@ -38,10 +38,9 @@ rules:
 
 calls:
   - methods: [Trace, Tracef, Debug, Debugf, Info, Infof, Warn, Warnf, Warning, Warningf, Error, Errorf, Fatal, Fatalf, Panic, Panicf, Print, Printf, Println, End, EndElapsed, EndError]
-    receivers: [log, logger, fl, s.logger]
     blank-before: true
     blank-after: true
-    include-block-boundaries: false
+    include-block-boundaries: true
 
 files:
   generated: gofmt-only

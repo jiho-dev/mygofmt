@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -389,10 +390,14 @@ func TestCLIDefaultConfig(t *testing.T) {
 }
 
 func TestExampleConfigs(t *testing.T) {
-	for _, path := range []string{"mygofmt.yaml.example"} {
+	for _, path := range []string{"mygofmt.yaml.example", "skills/references/mygofmt.yaml.example"} {
 		cfg, err := config.Load(path)
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		if !reflect.DeepEqual(cfg, config.Default()) {
+			t.Fatalf("%s differs from built-in defaults", path)
 		}
 
 		input, err := os.ReadFile("testdata/02_log_boundaries.input.go")
@@ -643,10 +648,7 @@ func f() {
 	_ = tags
 }
 `)
-	cfg, err := config.Load("mygofmt.yaml.example")
-	if err != nil {
-		t.Fatal(err)
-	}
+	cfg := gofumptTestConfig(t)
 
 	got, err := Format(input, cfg)
 	if err != nil {
@@ -745,10 +747,7 @@ type Processor interface {
 var callback = func(ctx context.Context,
 	actor string) error { return nil }
 `)
-	cfg, err := config.Load("mygofmt.yaml.example")
-	if err != nil {
-		t.Fatal(err)
-	}
+	cfg := gofumptTestConfig(t)
 
 	got, err := Format(input, cfg)
 	if err != nil {
@@ -787,10 +786,7 @@ func f() {
 	_ = taskID
 }
 `)
-	cfg, err := config.Load("mygofmt.yaml.example")
-	if err != nil {
-		t.Fatal(err)
-	}
+	cfg := gofumptTestConfig(t)
 
 	got, err := Format(input, cfg)
 	if err != nil {
@@ -1105,7 +1101,7 @@ func TestSpacingAfterTrailingBlockComment(t *testing.T) {
 		for _, next := range []string{"return", "log.Info(\"ready\")"} {
 			input := []byte("package p\nfunc f() {\nwork() " + comment + " " + next + "\n}\n")
 
-			for _, cfg := range []config.Config{config.Default(), loadExampleConfig(t)} {
+			for _, cfg := range []config.Config{config.Default(), gofumptTestConfig(t)} {
 				got, err := Format(input, cfg)
 				if err != nil {
 					t.Fatal(err)
