@@ -431,13 +431,13 @@ func receiverName(expression ast.Expr) string {
 	return ""
 }
 
-func (s *sourceState) callSpacing(stmt ast.Stmt, before, boundary bool) bool {
+func (s *sourceState) callSpacing(stmt ast.Stmt, before bool) bool {
 	if !s.options.Rules.SpaceConfiguredCalls {
 		return false
 	}
 
 	rule, ok := s.callRule(stmt)
-	if !ok || (boundary && !rule.IncludeBlockBoundaries) {
+	if !ok {
 		return false
 	}
 
@@ -449,6 +449,7 @@ func (s *sourceState) callSpacing(stmt ast.Stmt, before, boundary bool) bool {
 }
 
 func (s *sourceState) expandBlocks() {
+	multilineFunctions := s.multilineFunctionBodies()
 	deferred := make(map[*ast.BlockStmt]bool)
 	ast.Inspect(s.file, func(node ast.Node) bool {
 		if n, ok := node.(*ast.DeferStmt); ok && s.options.Rules.MultilineDeferBody {
@@ -474,11 +475,7 @@ func (s *sourceState) expandBlocks() {
 			return true
 		}
 
-		expand := deferred[block]
-		if len(block.List) > 1 {
-			expand = expand || s.callSpacing(block.List[0], true, true) ||
-				s.callSpacing(block.List[len(block.List)-1], false, true)
-		}
+		expand := deferred[block] || multilineFunctions[block]
 
 		for i := 1; i < len(block.List); i++ {
 			expand = expand || s.needsGap(block.List[i-1], block.List[i])
@@ -586,13 +583,9 @@ func (s *sourceState) blankBefore(after, before token.Pos) {
 	s.inserts[lineStart] = "\n"
 }
 
-func (s *sourceState) spaceStatements(statements []ast.Stmt, open, close token.Pos) {
+func (s *sourceState) spaceStatements(statements []ast.Stmt) {
 	if len(statements) <= 1 {
 		return
-	}
-
-	if s.callSpacing(statements[0], true, true) {
-		s.blankBefore(open, statements[0].Pos())
 	}
 
 	for i := 1; i < len(statements); i++ {
@@ -601,17 +594,13 @@ func (s *sourceState) spaceStatements(statements []ast.Stmt, open, close token.P
 			s.blankBefore(previous.End(), current.Pos())
 		}
 	}
-
-	if s.callSpacing(statements[len(statements)-1], false, true) {
-		s.blankBefore(statements[len(statements)-1].End(), close)
-	}
 }
 
 func (s *sourceState) needsGap(previous, current ast.Stmt) bool {
 	_, returning := current.(*ast.ReturnStmt)
 	w := s.options.Rules
 
-	return s.callSpacing(previous, false, false) || s.callSpacing(current, true, false) || (w.BlankAfterLoop &&
+	return s.callSpacing(previous, false) || s.callSpacing(current, true) || (w.BlankAfterLoop &&
 		isLoop(previous)) || (w.BlankBeforeLoop && isLoop(current)) || (w.BlankAfterControlBlock &&
 		isControl(previous) && !isLoop(previous)) || (w.BlankBeforeReturn && returning) || (w.BlankAfterMultilineInit &&
 		s.longInitialization(previous))
@@ -633,31 +622,58 @@ func (s *sourceState) longInitialization(stmt ast.Stmt) bool {
 }
 
 func (s *sourceState) spaceBlocks() {
+	multilineFunctions := s.multilineFunctionBodies()
 	ast.Inspect(s.file, func(node ast.Node) bool {
 		block, ok := node.(*ast.BlockStmt)
 		if !ok {
 			return true
 		}
 
-		s.spaceStatements(block.List, block.Lbrace, block.Rbrace)
-
-		// Clause boundaries are available directly in their containing block.
-		for i, stmt := range block.List {
-			end := block.Rbrace
-			if i+1 < len(block.List) {
-				end = block.List[i+1].Pos()
+		s.spaceStatements(block.List)
+		if multilineFunctions[block] && len(block.List) > 0 {
+			first := block.List[0].Pos()
+			for _, group := range s.file.Comments {
+				if group.Pos() > block.Lbrace && group.Pos() < first {
+					first = group.Pos()
+				}
 			}
+			s.blankBefore(block.Lbrace, first)
+		}
 
+		for _, stmt := range block.List {
 			switch n := stmt.(type) {
 			case *ast.CaseClause:
-				s.spaceStatements(n.Body, n.Colon, end)
+				s.spaceStatements(n.Body)
 			case *ast.CommClause:
-				s.spaceStatements(n.Body, n.Colon, end)
+				s.spaceStatements(n.Body)
 			}
 		}
 
 		return true
 	})
+}
+
+func (s *sourceState) multilineFunctionBodies() map[*ast.BlockStmt]bool {
+	bodies := make(map[*ast.BlockStmt]bool)
+	if !s.options.Rules.BlankAfterMultilineSignature {
+		return bodies
+	}
+
+	ast.Inspect(s.file, func(node ast.Node) bool {
+		var signature *ast.FuncType
+		var body *ast.BlockStmt
+		switch n := node.(type) {
+		case *ast.FuncDecl:
+			signature, body = n.Type, n.Body
+		case *ast.FuncLit:
+			signature, body = n.Type, n.Body
+		}
+		if body != nil && s.line(signature.Pos()) < s.line(signature.End()-1) {
+			bodies[body] = true
+		}
+		return true
+	})
+	return bodies
 }
 
 // joinErrorChecks only joins a call assignment and a plain err != nil guard.

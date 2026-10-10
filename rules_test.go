@@ -75,6 +75,12 @@ func TestYAMLRuleSwitchesChangeFormatting(t *testing.T) {
 			markerWhenOn: true,
 		},
 		{
+			name:         "blank-after-multiline-signature",
+			source:       "package p\nfunc f(first int,\nsecond int) { work() }\n",
+			marker:       "{\n\n\twork()",
+			markerWhenOn: true,
+		},
+		{
 			name:         "blank-before-return",
 			source:       "package p\nfunc f() int { work(); return 1 }\n",
 			marker:       "work()\n\n\treturn",

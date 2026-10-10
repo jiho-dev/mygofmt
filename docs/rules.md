@@ -33,6 +33,7 @@ rules:
 | 이름 | 기본값 | 기능과 예제 (`입력` → `true`일 때) |
 |---|---|---|
 | `preserve-existing-blank-lines` | `true` | 작성자가 넣은 문장 사이 빈 줄을 유지한다. `first()⏎⏎second()` → 그대로 유지한다. `false`면 주석 없는 문장 사이 여분의 빈 줄을 정리한다. |
+| `blank-after-multiline-signature` | `true` | 함수·메서드·익명 함수의 시그니처가 두 줄 이상이면 본문 첫 문장 또는 선행 주석 앞에 빈 줄을 둔다. 빈 본문과 한 줄 시그니처에는 추가하지 않는다. 단일 문장 블록의 빈 줄 제거보다 우선한다. |
 | `blank-before-return` | `true` | 앞 문장이 있는 반환문 앞에 빈 줄을 둔다. `work()⏎return nil` → `work()⏎⏎return nil` |
 | `blank-before-loop` | `true` | 반복문 앞에 빈 줄을 둔다. `prepare()⏎for ready { run() }` → `prepare()⏎⏎for ready { run() }` |
 | `blank-after-loop` | `true` | 반복문 뒤에 빈 줄을 둔다. `for ready { run() }⏎finish()` → `for ready { run() }⏎⏎finish()` |
@@ -42,7 +43,7 @@ rules:
 | `space-configured-calls` | `true` | `calls`에 지정한 호출 앞뒤에 빈 줄을 둔다. `prepare()⏎log.Info("ready")⏎finish()` → `prepare()⏎⏎log.Info("ready")⏎⏎finish()` |
 | `compact-single-statement-blocks` | `true` | 문장이 하나인 블록의 중괄호 안쪽 빈 줄을 제거한다. `if ok {⏎⏎run()⏎⏎}` → `if ok {⏎run()⏎}` |
 
-`calls`의 `blank-before`, `blank-after`, `include-block-boundaries`는 **각 호출 규칙의 적용 위치**를 정한다. `space-configured-calls: false`면 호출 규칙의 빈 줄 추가 전체가 꺼진다. 메서드·수신자 목록은 호출을 찾는 조건이며, `calls: []`도 호출 빈 줄을 끈다.
+`calls`의 `blank-before`, `blank-after`는 **문장 사이 호출 빈 줄의 적용 위치**를 정한다. 블록이나 `case`의 첫 호출 앞과 마지막 호출 뒤에는 설정과 관계없이 호출용 빈 줄을 추가하지 않는다. `include-block-boundaries`는 기존 설정 호환을 위해 허용하지만 동작에는 영향을 주지 않는다. 여러 줄 함수 시그니처 뒤 빈 줄은 별도의 `blank-after-multiline-signature` 규칙이 적용된다. `space-configured-calls: false`면 호출 규칙의 빈 줄 추가 전체가 꺼진다. 메서드·수신자 목록은 호출을 찾는 조건이며, `calls: []`도 호출 빈 줄을 끈다.
 
 `space-configured-calls`가 켜져 있으면 대상 호출 바로 위의 독립된 주석 그룹과 호출 사이 빈 줄을 제거한다. `preserve-existing-blank-lines: true`여도 이 간격은 정리하며, 호출 앞 빈 줄이 필요하면 주석 앞에 둔다. 이전 코드 줄 끝의 주석과 더 앞쪽 주석 문단의 간격은 유지한다.
 

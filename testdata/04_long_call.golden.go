@@ -14,5 +14,4 @@ func invoke() {
 		request.PipelineId,
 		request.ActorId,
 	)
-
 }

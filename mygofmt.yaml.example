@@ -1,8 +1,9 @@
 version: 1
 
 base:
-  formatter: gofmt
-  allow-syntax-changes: false
+  formatter: gofumpt
+#  formatter: gofmt
+  allow-syntax-changes: true
   gofumpt:
     lang-version: go1.25
     module-path: ""
@@ -22,6 +23,7 @@ rules:
   balance-logical-conditions: true
   multiline-defer-body: true
   preserve-existing-blank-lines: true
+  blank-after-multiline-signature: true
   blank-before-return: true
   blank-before-loop: true
   blank-after-loop: true
@@ -38,8 +40,8 @@ rules:
 
 calls:
   - methods: [Trace, Tracef, Debug, Debugf, Info, Infof, Warn, Warnf, Warning, Warningf, Error, Errorf, Fatal, Fatalf, Panic, Panicf, Print, Printf, Println, End, EndElapsed, EndError]
-    blank-before: true
-    blank-after: true
+    blank-before: false
+    blank-after: false
     include-block-boundaries: true
 
 files:

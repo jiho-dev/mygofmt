@@ -1,8 +1,8 @@
 version: 1
 
 base:
-  formatter: gofmt
-  allow-syntax-changes: false
+  formatter: gofumpt
+  allow-syntax-changes: true
   gofumpt:
     lang-version: go1.25
     module-path: ""
@@ -22,6 +22,7 @@ rules:
   balance-logical-conditions: true
   multiline-defer-body: true
   preserve-existing-blank-lines: true
+  blank-after-multiline-signature: true
   blank-before-return: true
   blank-before-loop: true
   blank-after-loop: true

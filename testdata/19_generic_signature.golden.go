@@ -7,5 +7,6 @@ func Generic[
 	processor ProcessorClient,
 	configuration ExampleServiceConfiguration,
 ) T {
+
 	return processor.Value(request, configuration)
 }

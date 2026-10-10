@@ -6,7 +6,6 @@ func emit(ok bool) {
 	}
 
 	for ok {
-
 		logger.Debug("waiting")
 
 		break
@@ -17,5 +16,4 @@ func emit(ok bool) {
 	}()
 
 	log.Infof("finished")
-
 }

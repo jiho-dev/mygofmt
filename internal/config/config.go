@@ -39,6 +39,7 @@ type Rules struct {
 	BalanceLogicalConditions     bool `yaml:"balance-logical-conditions"`
 	MultilineDeferBody           bool `yaml:"multiline-defer-body"`
 	PreserveExistingBlankLines   bool `yaml:"preserve-existing-blank-lines"`
+	BlankAfterMultilineSignature bool `yaml:"blank-after-multiline-signature"`
 	BlankBeforeReturn            bool `yaml:"blank-before-return"`
 	BlankBeforeLoop              bool `yaml:"blank-before-loop"`
 	BlankAfterLoop               bool `yaml:"blank-after-loop"`
@@ -94,11 +95,13 @@ type Layout struct {
 }
 
 type CallRule struct {
-	Methods                []string `yaml:"methods"`
-	Receivers              []string `yaml:"receivers"`
-	BlankBefore            bool     `yaml:"blank-before"`
-	BlankAfter             bool     `yaml:"blank-after"`
-	IncludeBlockBoundaries bool     `yaml:"include-block-boundaries"`
+	Methods     []string `yaml:"methods"`
+	Receivers   []string `yaml:"receivers"`
+	BlankBefore bool     `yaml:"blank-before"`
+	BlankAfter  bool     `yaml:"blank-after"`
+	// IncludeBlockBoundaries is accepted for configuration compatibility.
+	// Call spacing never adds blank lines at block boundaries.
+	IncludeBlockBoundaries bool `yaml:"include-block-boundaries"`
 }
 
 type Files struct {
@@ -138,6 +141,7 @@ func Default() Config {
 			BalanceLogicalConditions:     true,
 			MultilineDeferBody:           true,
 			PreserveExistingBlankLines:   true,
+			BlankAfterMultilineSignature: true,
 			BlankBeforeReturn:            true,
 			BlankBeforeLoop:              true,
 			BlankAfterLoop:               true,

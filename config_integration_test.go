@@ -173,9 +173,113 @@ func TestCallRules(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if bytes.Contains(got, []byte("{\n\n\taudit")) != boundary ||
-			bytes.Contains(got, []byte("event\")\n\n}")) != boundary {
+		if bytes.Contains(got, []byte("{\n\n\taudit")) ||
+			bytes.Contains(got, []byte("event\")\n\n}")) {
 			t.Fatalf("boundary=%v:\n%s", boundary, got)
+		}
+	}
+}
+
+func TestFirstConfiguredCallDoesNotAddLeadingBlankLine(t *testing.T) {
+	cases := []struct {
+		name, body, marker string
+	}{
+		{"function", "vpcEval.Errorf(\"failed\", err)\nreturn members", "{\n\tvpcEval.Errorf"},
+		{"error block", "if err != nil {\nvpcEval.Errorf(\"failed\", err)\nreturn members\n}", "if err != nil {\n\t\tvpcEval.Errorf"},
+		{"comment", "if err != nil {\n// explain failure\nvpcEval.Errorf(\"failed\", err)\nreturn members\n}", "if err != nil {\n\t\t// explain failure\n\t\tvpcEval.Errorf"},
+		{"switch", "switch n {\ncase 1:\nvpcEval.Errorf(\"failed\", err)\nreturn members\n}", "case 1:\n\t\tvpcEval.Errorf"},
+		{"select", "select {\ncase <-done:\nvpcEval.Errorf(\"failed\", err)\nreturn members\n}", "case <-done:\n\t\tvpcEval.Errorf"},
+	}
+	for _, engine := range []string{"gofmt", "gofumpt"} {
+		for _, tc := range cases {
+			t.Run(engine+"/"+tc.name, func(t *testing.T) {
+				cfg := noRules()
+				cfg.Base.Formatter = engine
+				cfg.Base.AllowSyntaxChanges = engine == "gofumpt"
+				cfg.Calls = []config.CallRule{{
+					Methods: []string{"Errorf"}, BlankBefore: true, BlankAfter: true, IncludeBlockBoundaries: true,
+				}}
+				input := []byte("package p\nfunc f() []Member {\n" + tc.body + "\n}\n")
+				got, err := Format(input, cfg)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !bytes.Contains(got, []byte(tc.marker)) {
+					t.Fatalf("unexpected leading spacing:\n%s", got)
+				}
+				if !bytes.Contains(got, []byte("Errorf(\"failed\", err)\n\n")) {
+					t.Fatalf("blank line after the call is missing:\n%s", got)
+				}
+				verifyInvariants(t, input, got, cfg)
+			})
+		}
+	}
+}
+
+func TestLastConfiguredCallDoesNotAddTrailingBlankLine(t *testing.T) {
+	for _, engine := range []string{"gofmt", "gofumpt"} {
+		for _, body := range []string{
+			"prepare()\nfl.EndError(\"err\", err)",
+			"defer func() {\nprepare()\nfl.EndError(\"err\", err)\n}(time.Now())",
+			"switch n {\ncase 1:\nprepare()\nfl.EndError(\"err\", err)\n}",
+			"select {\ncase <-done:\nprepare()\nfl.EndError(\"err\", err)\n}",
+		} {
+			t.Run(engine+"/"+body, func(t *testing.T) {
+				cfg := noRules()
+				cfg.Base.Formatter = engine
+				cfg.Base.AllowSyntaxChanges = engine == "gofumpt"
+				cfg.Calls = []config.CallRule{{
+					Methods: []string{"EndError"}, BlankBefore: true, BlankAfter: true, IncludeBlockBoundaries: true,
+				}}
+				input := []byte("package p\nfunc f() {\n" + body + "\n}\n")
+				got, err := Format(input, cfg)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if bytes.Contains(got, []byte("EndError(\"err\", err)\n\n")) {
+					t.Fatalf("last call added a trailing blank line:\n%s", got)
+				}
+				if !bytes.Contains(got, []byte("prepare()\n\n")) {
+					t.Fatalf("blank line before the call is missing:\n%s", got)
+				}
+				verifyInvariants(t, input, got, cfg)
+			})
+		}
+	}
+}
+
+func TestBlankAfterMultilineSignature(t *testing.T) {
+	cases := []struct {
+		name, declaration, marker string
+		wantGap                   bool
+	}{
+		{"parameters", "func f(a int,\nb int) { work() }", "{\n\n\twork()", true},
+		{"method", "func (vw *vpcWorker) request(ctx workflow.Context, logger log.Logger,\ncomctx common.Context, req *Request) (err error) { work() }", "{\n\n\twork()", true},
+		{"results", "func f() (\na int,\nb int) { work() }", "{\n\n\twork()", true},
+		{"type parameters", "func f[A any,\nB any]() { work() }", "{\n\n\twork()", true},
+		{"literal", "var f = func(a int,\nb int) { work() }", "{\n\n\twork()", true},
+		{"leading comment", "func f(a int,\nb int) {\n// explain work\nwork()\n}", "{\n\n\t// explain work\n\twork()", true},
+		{"existing gap", "func f(a int,\nb int) {\n\nwork()\n}", "{\n\n\twork()", true},
+		{"single line", "func f(a int, b int) {\nwork()\n}", "{\n\n\twork()", false},
+		{"empty body", "func f(a int,\nb int) {}", "{\n\n", false},
+	}
+	for _, engine := range []string{"gofmt", "gofumpt"} {
+		for _, tc := range cases {
+			t.Run(engine+"/"+tc.name, func(t *testing.T) {
+				cfg := noRules()
+				cfg.Base.Formatter = engine
+				cfg.Base.AllowSyntaxChanges = engine == "gofumpt"
+				cfg.Rules.BlankAfterMultilineSignature = true
+				input := []byte("package p\n" + tc.declaration + "\n")
+				got, err := Format(input, cfg)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if bytes.Contains(got, []byte(tc.marker)) != tc.wantGap {
+					t.Fatalf("unexpected function body spacing:\n%s", got)
+				}
+				verifyInvariants(t, input, got, cfg)
+			})
 		}
 	}
 }
@@ -390,14 +494,18 @@ func TestCLIDefaultConfig(t *testing.T) {
 }
 
 func TestExampleConfigs(t *testing.T) {
+	want := config.Default()
+	want.Base.Formatter = "gofumpt"
+	want.Base.AllowSyntaxChanges = true
+
 	for _, path := range []string{"mygofmt.yaml.example", "skills/references/mygofmt.yaml.example"} {
 		cfg, err := config.Load(path)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if !reflect.DeepEqual(cfg, config.Default()) {
-			t.Fatalf("%s differs from built-in defaults", path)
+		if !reflect.DeepEqual(cfg, want) {
+			t.Fatalf("%s differs from the expected gofumpt configuration", path)
 		}
 
 		input, err := os.ReadFile("testdata/02_log_boundaries.input.go")
