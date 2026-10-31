@@ -451,11 +451,17 @@ func (s *sourceState) callSpacing(stmt ast.Stmt, before bool) bool {
 func (s *sourceState) expandBlocks() {
 	multilineFunctions := s.multilineFunctionBodies()
 	deferred := make(map[*ast.BlockStmt]bool)
+	// Function declarations expand only non-empty bodies; func f() {} stays.
+	functions := make(map[*ast.BlockStmt]bool)
 	ast.Inspect(s.file, func(node ast.Node) bool {
 		if n, ok := node.(*ast.DeferStmt); ok && s.options.Rules.MultilineDeferBody {
 			if literal, ok := n.Call.Fun.(*ast.FuncLit); ok {
 				deferred[literal.Body] = true
 			}
+		}
+
+		if n, ok := node.(*ast.FuncDecl); ok && n.Body != nil && s.options.Rules.MultilineFunctionBody {
+			functions[n.Body] = true
 		}
 
 		return true
@@ -475,7 +481,7 @@ func (s *sourceState) expandBlocks() {
 			return true
 		}
 
-		expand := deferred[block] || multilineFunctions[block]
+		expand := deferred[block] || functions[block] || multilineFunctions[block]
 
 		for i := 1; i < len(block.List); i++ {
 			expand = expand || s.needsGap(block.List[i-1], block.List[i])
@@ -621,7 +627,23 @@ func (s *sourceState) longInitialization(stmt ast.Stmt) bool {
 	return false
 }
 
+// spaceDeclarations separates adjacent top-level declarations when either
+// spans several lines. Runs of one-line declarations keep their grouping.
+func (s *sourceState) spaceDeclarations() {
+	if !s.options.Rules.BlankBetweenMultilineDecls {
+		return
+	}
+
+	for i := 1; i < len(s.file.Decls); i++ {
+		previous, current := s.file.Decls[i-1], s.file.Decls[i]
+		if s.line(previous.Pos()) != s.line(previous.End()) || s.line(current.Pos()) != s.line(current.End()) {
+			s.blankBefore(previous.End(), current.Pos())
+		}
+	}
+}
+
 func (s *sourceState) spaceBlocks() {
+	s.spaceDeclarations()
 	multilineFunctions := s.multilineFunctionBodies()
 	ast.Inspect(s.file, func(node ast.Node) bool {
 		block, ok := node.(*ast.BlockStmt)

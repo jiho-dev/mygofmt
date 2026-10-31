@@ -38,6 +38,7 @@ type Rules struct {
 	WrapNestedCompositeLiterals  bool `yaml:"wrap-nested-composite-literals"`
 	BalanceLogicalConditions     bool `yaml:"balance-logical-conditions"`
 	MultilineDeferBody           bool `yaml:"multiline-defer-body"`
+	MultilineFunctionBody        bool `yaml:"multiline-function-body"`
 	PreserveExistingBlankLines   bool `yaml:"preserve-existing-blank-lines"`
 	BlankAfterMultilineSignature bool `yaml:"blank-after-multiline-signature"`
 	BlankBeforeReturn            bool `yaml:"blank-before-return"`
@@ -48,6 +49,7 @@ type Rules struct {
 	JoinCallErrorChecks          bool `yaml:"join-call-error-checks"`
 	SpaceConfiguredCalls         bool `yaml:"space-configured-calls"`
 	CompactSingleStatementBlocks bool `yaml:"compact-single-statement-blocks"`
+	BlankBetweenMultilineDecls   bool `yaml:"blank-between-multiline-declarations"`
 	PreserveBlockCommentGaps     bool `yaml:"preserve-block-comment-gaps"`
 	PreserveSignatureLayout      bool `yaml:"preserve-signature-layout"`
 	GofumptGroupParams           bool `yaml:"gofumpt-group-params"`
@@ -140,6 +142,7 @@ func Default() Config {
 			WrapNestedCompositeLiterals:  true,
 			BalanceLogicalConditions:     true,
 			MultilineDeferBody:           true,
+			MultilineFunctionBody:        true,
 			PreserveExistingBlankLines:   true,
 			BlankAfterMultilineSignature: true,
 			BlankBeforeReturn:            true,
@@ -150,6 +153,7 @@ func Default() Config {
 			JoinCallErrorChecks:          true,
 			SpaceConfiguredCalls:         true,
 			CompactSingleStatementBlocks: true,
+			BlankBetweenMultilineDecls:   true,
 			PreserveBlockCommentGaps:     true,
 			PreserveSignatureLayout:      true,
 		},

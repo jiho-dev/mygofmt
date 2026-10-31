@@ -25,6 +25,7 @@ rules:
 | `wrap-nested-composite-literals` | `true` | 여러 줄 키 기반 리터럴 안의 키 기반 자식 리터럴도 나눈다. `Outer{⏎ Inner: Inner{A: a, B: b},⏎}` → `Outer{⏎ Inner: Inner{⏎ A: a,⏎ B: b,⏎ },⏎}`. `wrap-composite-literals`가 켜져 있어야 한다. |
 | `balance-logical-conditions` | `true` | 긴 `&&`·`||` 조건식을 연산자 경계에서 나눈다. `if longFirstCondition && longSecondCondition` → `if longFirstCondition &&⏎ longSecondCondition` |
 | `multiline-defer-body` | `true` | `defer` 익명 함수의 한 줄 본문을 여러 줄로 편다. `defer func() { cleanup() }()` → `defer func() {⏎ cleanup()⏎ }()` |
+| `multiline-function-body` | `true` | 함수·메서드 선언의 한 줄 본문을 여러 줄로 편다. 빈 본문과 익명 함수는 그대로 둔다. `func f() int { return 1 }` → `func f() int {⏎ return 1⏎}` |
 
 줄 길이는 `layout.max-line-length`의 선호 기준이다. 긴 문자열·주석·단일 식별자는 자르지 않는다. `layout.tab-width`는 화면 열 너비 계산에 사용한다. 이미 작성된 줄바꿈은 가능한 한 보존한다.
 
@@ -42,6 +43,7 @@ rules:
 | `join-call-error-checks` | `true` | 호출 결과 대입과 바로 뒤의 단순 `err != nil` 검사를 붙인다. `value, err := load()⏎⏎if err != nil { return err }` → 두 문장 사이 빈 줄을 제거한다. 주석이 끼면 유지한다. |
 | `space-configured-calls` | `true` | `calls`에 지정한 호출 앞뒤에 빈 줄을 둔다. `prepare()⏎log.Info("ready")⏎finish()` → `prepare()⏎⏎log.Info("ready")⏎⏎finish()` |
 | `compact-single-statement-blocks` | `true` | 문장이 하나인 블록의 중괄호 안쪽 빈 줄을 제거한다. `if ok {⏎⏎run()⏎⏎}` → `if ok {⏎run()⏎}` |
+| `blank-between-multiline-declarations` | `true` | 인접한 최상위 선언 중 하나라도 여러 줄이면 둘 사이에 빈 줄을 둔다. 선언 앞 주석은 선언에 붙여 그 앞에 빈 줄을 둔다. 한 줄 선언끼리는 그대로 둔다. `type A struct {⏎ X int⏎}⏎type B struct {⏎ Y int⏎}` → `}⏎⏎type B struct {` |
 
 `calls`의 `blank-before`, `blank-after`는 **문장 사이 호출 빈 줄의 적용 위치**를 정한다. 블록이나 `case`의 첫 호출 앞과 마지막 호출 뒤에는 설정과 관계없이 호출용 빈 줄을 추가하지 않는다. `include-block-boundaries`는 기존 설정 호환을 위해 허용하지만 동작에는 영향을 주지 않는다. 여러 줄 함수 시그니처 뒤 빈 줄은 별도의 `blank-after-multiline-signature` 규칙이 적용된다. `space-configured-calls: false`면 호출 규칙의 빈 줄 추가 전체가 꺼진다. 메서드·수신자 목록은 호출을 찾는 조건이며, `calls: []`도 호출 빈 줄을 끈다.
 

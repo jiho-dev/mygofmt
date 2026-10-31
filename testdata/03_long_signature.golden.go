@@ -9,4 +9,7 @@ func Allocate(
 
 	return processor.Allocate(request, configuration)
 }
-func short(id string) error { return nil }
+
+func short(id string) error {
+	return nil
+}

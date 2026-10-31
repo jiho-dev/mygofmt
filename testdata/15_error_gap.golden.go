@@ -10,6 +10,7 @@ func callError() error {
 
 	return nil
 }
+
 func documentedError() error {
 	result, err := fetch()
 

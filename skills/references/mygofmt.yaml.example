@@ -21,6 +21,7 @@ rules:
   wrap-nested-composite-literals: true
   balance-logical-conditions: true
   multiline-defer-body: true
+  multiline-function-body: true
   preserve-existing-blank-lines: true
   blank-after-multiline-signature: true
   blank-before-return: true
@@ -31,6 +32,7 @@ rules:
   join-call-error-checks: true
   space-configured-calls: true
   compact-single-statement-blocks: true
+  blank-between-multiline-declarations: true
   preserve-block-comment-gaps: true
   preserve-signature-layout: true
   gofumpt-group-params: false

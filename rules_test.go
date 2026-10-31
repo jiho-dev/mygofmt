@@ -129,6 +129,18 @@ func TestYAMLRuleSwitchesChangeFormatting(t *testing.T) {
 			markerWhenOn: false,
 		},
 		{
+			name:         "multiline-function-body",
+			source:       "package p\nfunc f() int { return 1 }\n",
+			marker:       "func f() int {\n\treturn 1\n}",
+			markerWhenOn: true,
+		},
+		{
+			name:         "blank-between-multiline-declarations",
+			source:       "package p\ntype A struct {\nX int\n}\ntype B struct {\nY int\n}\n",
+			marker:       "}\n\ntype B",
+			markerWhenOn: true,
+		},
+		{
 			name:         "preserve-block-comment-gaps",
 			source:       "package p\nfunc f() {\nx, err := start()\n\n/*\nnote\n*/\n\nif err != nil { return }\n_ = x\n}\n",
 			otherConfig:  "base: {formatter: gofumpt, allow-syntax-changes: true}\n",
